@@ -97,6 +97,44 @@ def deMorgan(node):
 
     return node
 
+def distributy_or(node): # ¿Con esta llega?
+    aux_left = None
+    aux_right = None
+    
+    if node.item == "|": # Se puede reducir, aux = node.right/left según donde esté &!
+        if node.left.item == "&":
+
+            aux_left = Node("|")
+            aux_left.left = node.right
+            aux_left.right = node.left.left
+
+            aux_right = Node("|")
+            aux_right.left = node.right
+            aux_right.right = node.left.right
+
+        elif node.right.item == "&":
+
+            aux_left = Node("|")
+            aux_left.left = node.left
+            aux_left.right = node.right.left
+
+            aux_right = Node("|")
+            aux_right.left = node.left
+            aux_right.right = node.right.right
+
+        if aux_left is not None: # ¿Cambiar por un else + break? Break solo para loops...
+            node.item = "&"
+            node.left = aux_left
+            node.right = aux_right
+
+    if node.left is not None:
+        node.left = distributy_or(node.left)  
+    if node.right is not None:
+        node.right = distributy_or(node.right)
+
+    return node 
+
+            
 
 pair = {"&","|",">","=","%"}
 inpair = {"-","0","1"}
@@ -155,14 +193,15 @@ def main():
 
     print("\nBase expressions:\n")
 
+    #word1 = "| p & q r ."
     word1 = "> | rain - weekend - happy ."
-    word2 = "= weekend - workday ."
+    #word2 = "= weekend - workday ."
 
     tree1 = process_polish(word1)
-    tree2 = process_polish(word2) 
+    #tree2 = process_polish(word2) 
 
     print(preorden(tree1))
-    print(preorden(tree2))
+    #print(preorden(tree2))
 
     '''print("\nSome errors:\n")
     print(process_polish(""))
@@ -171,25 +210,33 @@ def main():
     print("\nEquivalence:\n")
 
     tree1 = equivalence(tree1)
-    tree2 = equivalence(tree2)
+    #tree2 = equivalence(tree2)
 
     print(preorden(tree1))
-    print(preorden(tree2))
+    #print(preorden(tree2))
 
     print("\nImplications:\n")
 
     tree1 = implication(tree1)
-    tree2 = implication(tree2)
+    #tree2 = implication(tree2)
 
     print(preorden(tree1))
-    print(preorden(tree2))
+    #print(preorden(tree2))
 
     print("\nDeMorgan:\n")
 
     tree1 = deMorgan(tree1)
-    tree2 = deMorgan(tree2)
+    #tree2 = deMorgan(tree2)
 
     print(preorden(tree1))
-    print(preorden(tree2))
+    #print(preorden(tree2))
+
+    print("\nDistributivity:\n")
+
+    tree1 = distributy_or(tree1)
+    #tree2 = deMorgan(tree2)
+
+    print(preorden(tree1))
+    #print(preorden(tree2))
 
 main()
