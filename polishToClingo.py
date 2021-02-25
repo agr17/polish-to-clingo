@@ -8,13 +8,62 @@ class Node:
         self.right = None
 
 # El recorrido en preorden devuelve la expresión en notación polaca
-def PreOrder(node):
+def preorden(node):
     nodeList = []
     if node is not None:
-        nodeList = nodeList + PreOrder(node.left)
+        nodeList = nodeList + preorden(node.left)
         nodeList.insert(0, node.item)
-        nodeList = nodeList + PreOrder(node.right)
+        nodeList = nodeList + preorden(node.right)
     return nodeList
+
+'''def equivalence(node):
+    # replace a <-> b by (a /\ b) \/ (¬a /\ ¬b) 
+    if node.item == "=": # damos por hecho que left y right not null'''
+
+
+
+def implication(node):
+    # replace a -> b by ¬a \/ b 
+    if node.item == ">":
+        node.item = "|"
+        aux = Node("-") # nodo auxiliar para añadir la negación
+        aux.left = node.left
+        node.left = aux
+    if node.left is not None:
+        implication(node.left) # no importa el orden
+    if node.right is not None:
+        implication(node.right)
+    return node
+
+def deMorgan(node):
+    if node.item == "-" and (node.left.item == "|" or node.left.item == "&"): # si no es - ya no busca el hijo izquierdo 
+        node = node.left
+        if node.item == "|":
+            node.item = "&"
+        else:
+            node.item = "|"
+
+        if node.left.item == "-":
+            node.left = node.left.left # quitamos la negación ¬(¬a) = a
+        else: # añadir ¬
+            aux = Node("-")
+            aux.left = node.left
+            node.left = aux
+
+        if node.right.item == "-":
+            node.right = node.right.left # quitamos la negación ¬(¬a) = a
+        else:
+            aux = Node("-")
+            aux.left = node.right
+            node.right = aux
+
+    if node.left is not None:
+        node.left = deMorgan(node.left) # no importa el orden
+    if node.right is not None:
+        node.right = deMorgan(node.right)
+
+    return node
+
 
 pair = {"&","|",">","=","%"}
 inpair = {"-","0","1"}
@@ -61,19 +110,35 @@ def process_polish(word):
     else:
 
         word_splited = word.split()
-        tree = to_tree(word_splited[:len(word_splited)-1]) # Quitar el .
-        print(PreOrder(tree))
-
+        return to_tree(word_splited[:len(word_splited)-1]) # Quitar el .
 
 def main():
 
     word1 = "> | rain - weekend - happy ."
     word2 = "= weekend - workday ."
 
-    process_polish(word1)
-    process_polish(word2)
-    print("\nSome errors:\n")
-    process_polish("")
-    process_polish("= weekend - workday ")
+    tree1 = process_polish(word1)
+    tree2 = process_polish(word2) 
+
+    print(preorden(tree1))
+    print(preorden(tree2))
+
+    '''print("\nSome errors:\n")
+    print(process_polish(""))
+    print(process_polish("= weekend - workday "))'''
+
+    print("\nImplications:\n")
+
+    tree1 = implication(tree1)
+    tree2 = implication(tree2)
+
+    print(preorden(tree1))
+    print(preorden(tree2))
+
+    print("\nDeMorgan:\n")
+
+    tree1 = deMorgan(tree1)
+
+    print(preorden(tree1))
 
 main()
