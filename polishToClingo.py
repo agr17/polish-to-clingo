@@ -16,9 +16,42 @@ def preorden(node):
         nodeList = nodeList + preorden(node.right)
     return nodeList
 
-'''def equivalence(node):
+def equivalence(node):
     # replace a <-> b by (a /\ b) \/ (¬a /\ ¬b) 
-    if node.item == "=": # damos por hecho que left y right not null'''
+    if node.item == "=": # damos por hecho que left y right not null
+        node.item = "|"
+
+        # Conjunción en la rama izquierda
+        aux_left = Node("&")
+        aux_left.left = node.left
+        aux_left.right = node.right
+
+        # Conjunción de negaciones en la rama derecha
+        aux_right = Node("&")
+
+        if node.left.item == "-":
+            aux_right.left = node.left.left
+        else:
+            aux_right.left = Node("-")
+            aux_right.left.left = node.left
+        
+        if node.right.item == "-":
+            aux_right.right = node.right.left
+        else:
+            aux_right.right = Node("-")
+            aux_right.right.left = node.left
+
+        node.left = aux_left
+        node.right = aux_right
+
+        # Fin
+
+    if node.left is not None:
+        equivalence(node.left) # no importa el orden
+    if node.right is not None:
+        equivalence(node.right)
+
+    return node
 
 
 
@@ -104,6 +137,12 @@ def to_tree(words):
         node.left = to_tree(rest)
         return node
 
+'''def to_clingo(cnf):
+    for conjunction in cnf.split("|"):
+        for word in conjunction.split("&"):
+            print(word)'''
+            
+
 def process_polish(word):
     if not word.endswith("."):
         print("Entrada invalida, no termina con .")
@@ -113,6 +152,8 @@ def process_polish(word):
         return to_tree(word_splited[:len(word_splited)-1]) # Quitar el .
 
 def main():
+
+    print("\nBase expressions:\n")
 
     word1 = "> | rain - weekend - happy ."
     word2 = "= weekend - workday ."
@@ -127,6 +168,14 @@ def main():
     print(process_polish(""))
     print(process_polish("= weekend - workday "))'''
 
+    print("\nEquivalence:\n")
+
+    tree1 = equivalence(tree1)
+    tree2 = equivalence(tree2)
+
+    print(preorden(tree1))
+    print(preorden(tree2))
+
     print("\nImplications:\n")
 
     tree1 = implication(tree1)
@@ -138,7 +187,9 @@ def main():
     print("\nDeMorgan:\n")
 
     tree1 = deMorgan(tree1)
+    tree2 = deMorgan(tree2)
 
     print(preorden(tree1))
+    print(preorden(tree2))
 
 main()
