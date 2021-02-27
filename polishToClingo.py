@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import sys
+
 class Node:
 
     def __init__(self, item):
@@ -263,7 +265,11 @@ def reductionToCNF(expresion):
 
 def main():
 
-    filaname = "polish.txt"
+    if len(sys.argv) != 2:
+        print("Usage: polishToClingo <input file>")
+        exit()
+
+    filaname = sys.argv[1]
 
     f = open(filaname, "r")
     words = set()
