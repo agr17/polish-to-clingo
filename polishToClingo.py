@@ -16,7 +16,7 @@ def preorden(node):
         nodeList = nodeList + preorden(node.right)
     return nodeList
 
-def firstStep(node):
+def firstStep(node): # FALTA XOR
     # replace a <-> b by (a /\ b) \/ (¬a /\ ¬b) 
     if node.item == "=": # damos por hecho que left y right not null
         node.item = "|"
@@ -44,7 +44,7 @@ def firstStep(node):
         node.left = aux_left
         node.right = aux_right
 
-        # Fin
+    # replace a -> b by ¬a \/ b
     elif node.item == ">":
         node.item = "|"
         aux = Node("-") # nodo auxiliar para añadir la negación
@@ -101,6 +101,10 @@ def isCNF(node): # se da por hecho que se han seguido todos los pasos previos
     if node.item == "|" and ( node.left.item == "&" or node.right.item == "&" ):
         return False
 
+    if node.item == "-": # está en NNF, la negación solo puede ir con atomos
+        node.item = "-" + node.left.item # por tanto, se juntan en un mismo nodo
+        node.left = None
+
     aux = True
 
     if node.left is not None:
@@ -135,6 +139,11 @@ def toCNF(node): # ¿Con esta llega? Solo hace distributiva
             aux_right.left = node.left
             aux_right.right = node.right.right
 
+        '''elif node.left.item != ("|" or "-") and node.right.item != ("|" or "-"):
+            node.item = [node.left.item,node.right.item]
+            node.left = None
+            node.right = None'''
+
         if aux_left is not None: # ¿Cambiar por un else + break? Break solo para loops...
             node.item = "&"
             node.left = aux_left
@@ -145,7 +154,49 @@ def toCNF(node): # ¿Con esta llega? Solo hace distributiva
     if node.right is not None:
         node.right = toCNF(node.right)
 
-    return node 
+    return node
+
+def asociative(node):
+    if node.item == "&":
+        node.left = asociative(node.left)
+        node.right = asociative(node.right)
+    elif node.item == "|":
+        if node.left.item != ("|" or "-") and node.right.item != ("|" or "-"):
+            node.item = [node.left.item, node.right.item] 
+            node.left = None
+            node.right = None
+        elif node.left.item != ("|" or "-"):
+            node = [node.left.item,asociative(node.right)]
+            node.left = None
+            node.right = None
+        elif node.right.item != ("|" or "-"):
+            node = [asociative(node.left),node.right.item]
+            node.left = None
+            node.right = None
+        else:
+            node = [asociative(node.left),asociative(node.right)]
+            node.left = None
+            node.right = None
+    else:
+        node.item = [node.item]
+    return node
+
+def toClingo(tree):
+    l = preorden(tree)
+
+    print(l)
+
+    for x in l:
+        if x != "&":
+            aux = ":- "
+            for y in x:
+                if y.startswith("-"):
+                    aux = aux + y[1:] + ", "
+                else:
+                    aux = aux + "not " + y + ", "
+            print(aux[:len(aux)-2] + ".") # quitamos la última ,
+
+            
 
 PAIR = {"&","|",">","=","%"} # Constante, estas operaciones son BINARIAS
 
@@ -205,6 +256,10 @@ def reductionToCNF(expresion):
     while not isCNF(tree):
         tree = toCNF(tree)
 
+    print(preorden(tree))
+
+    tree = asociative(tree)
+
     return tree
     
 
@@ -214,11 +269,17 @@ def main():
 
     #expresion = "| p & q r ."
     #expresion = "> | rain - weekend - happy ."
-    expresion = "= p - q ."
+    expresion = "= weekend - workday ."
     print(expresion)
 
     print("\nCNF:\n")
 
-    print(preorden(reductionToCNF(expresion)))
+    tree = reductionToCNF(expresion)
+
+    print(preorden(tree))
+
+    print("\nTo Clingo\n")
+
+    toClingo(tree)
 
 main()
