@@ -16,7 +16,7 @@ def preorden(node):
         nodeList = nodeList + preorden(node.right)
     return nodeList
 
-def equivalence(node):
+def firstStep(node):
     # replace a <-> b by (a /\ b) \/ (¬a /\ ¬b) 
     if node.item == "=": # damos por hecho que left y right not null
         node.item = "|"
@@ -45,25 +45,16 @@ def equivalence(node):
         node.right = aux_right
 
         # Fin
-
-    if node.left is not None:
-        equivalence(node.left) # no importa el orden
-    if node.right is not None:
-        equivalence(node.right)
-
-    return node
-
-def implication(node):
-    # replace a -> b by ¬a \/ b 
-    if node.item == ">":
+    elif node.item == ">":
         node.item = "|"
         aux = Node("-") # nodo auxiliar para añadir la negación
         aux.left = node.left
         node.left = aux
+
     if node.left is not None:
-        implication(node.left) # no importa el orden
+        firstStep(node.left) # no importa el orden
     if node.right is not None:
-        implication(node.right)
+        firstStep(node.right)
     return node
 
 def isNNF(node):
@@ -77,7 +68,7 @@ def isNNF(node):
     return aux
 
 def toNNF(node):
-    if node.item == "-": # and (node.left.item == "|" or node.left.item == "&"): # si no es - ya no busca el hijo izquierdo 
+    if node.item == "-": 
         if node.left.item == "|" or node.left.item == "&": # DeMorgan
             node = node.left
 
@@ -106,7 +97,20 @@ def toNNF(node):
 
     return node
 
-def distributy_or(node): # ¿Con esta llega?
+def isCNF(node): # se da por hecho que se han seguido todos los pasos previos
+    if node.item == "|" and ( node.left.item == "&" or node.right.item == "&" ):
+        return False
+
+    aux = True
+
+    if node.left is not None:
+        aux = aux and isCNF(node.left) # no importa el orden
+    if node.right is not None:
+        aux = aux and isCNF(node.right)
+    return aux
+    
+
+def toCNF(node): # ¿Con esta llega? Solo hace distributiva
     aux_left = None
     aux_right = None
     
@@ -137,16 +141,13 @@ def distributy_or(node): # ¿Con esta llega?
             node.right = aux_right
 
     if node.left is not None:
-        node.left = distributy_or(node.left)  
+        node.left = toCNF(node.left)  
     if node.right is not None:
-        node.right = distributy_or(node.right)
+        node.right = toCNF(node.right)
 
     return node 
 
-            
-
-pair = {"&","|",">","=","%"}
-inpair = {"-","0","1"}
+PAIR = {"&","|",">","=","%"} # Constante, estas operaciones son BINARIAS
 
 def to_tree(words):
 
@@ -156,15 +157,15 @@ def to_tree(words):
     word = words[0]
     rest = words[1:]
 
-    if word in pair:
+    if word in PAIR:
         node = Node(word)
 
         n = 1 # Para controlar que pertenece a la rama izquierda
-        aux = 0 # Offset de donde termina la rama izquierda
+        aux = 0 # Offset para ver donde termina la rama izquierda
 
         for var in rest:
             aux = aux + 1
-            if var in pair:
+            if var in PAIR:
                 n = n + 1
             else: 
                 if var == "-":
@@ -179,16 +180,10 @@ def to_tree(words):
         node.right = to_tree(rest[aux:])
 
         return node
-    else: # asumir que solo es un -
+    else: 
         node = Node(word)
         node.left = to_tree(rest)
-        return node
-
-'''def to_clingo(cnf):
-    for conjunction in cnf.split("|"):
-        for word in conjunction.split("&"):
-            print(word)'''
-            
+        return node            
 
 def process_polish(word):
     if not word.endswith("."):
@@ -198,57 +193,32 @@ def process_polish(word):
         word_splited = word.split()
         return to_tree(word_splited[:len(word_splited)-1]) # Quitar el .
 
+def reductionToCNF(expresion):
+    word_splited = expresion.split()
+    tree = to_tree(word_splited[:len(word_splited)-1])
+
+    tree = firstStep(tree)
+
+    while not isNNF(tree):
+        tree = toNNF(tree)
+
+    while not isCNF(tree):
+        tree = toCNF(tree)
+
+    return tree
+    
+
 def main():
 
     print("\nBase expressions:\n")
 
-    #word1 = "| p & q r ."
-    word1 = "> | rain - weekend - happy ."
-    #word2 = "= weekend - workday ."
+    #expresion = "| p & q r ."
+    #expresion = "> | rain - weekend - happy ."
+    expresion = "= p - q ."
+    print(expresion)
 
-    tree1 = process_polish(word1)
-    #tree2 = process_polish(word2) 
+    print("\nCNF:\n")
 
-    print(preorden(tree1))
-    #print(preorden(tree2))
-
-    '''print("\nSome errors:\n")
-    print(process_polish(""))
-    print(process_polish("= weekend - workday "))'''
-
-    print("\nEquivalence:\n")
-
-    tree1 = equivalence(tree1)
-    #tree2 = equivalence(tree2)
-
-    print(preorden(tree1))
-    #print(preorden(tree2))
-
-    print("\nImplications:\n")
-
-    tree1 = implication(tree1)
-    #tree2 = implication(tree2)
-
-    print(preorden(tree1))
-    #print(preorden(tree2))
-
-    i = 0
-    while not isNNF(tree1):
-        print("\ntoNNF:\n")
-        i = i + 1
-        print(i)
-        tree1 = toNNF(tree1)
-        #tree2 = deMorgan(tree2)
-
-    print(preorden(tree1))
-    #print(preorden(tree2))
-
-    print("\nDistributivity:\n")
-
-    tree1 = distributy_or(tree1)
-    #tree2 = deMorgan(tree2)
-
-    print(preorden(tree1))
-    #print(preorden(tree2))
+    print(preorden(reductionToCNF(expresion)))
 
 main()
