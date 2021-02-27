@@ -86,21 +86,17 @@ def toNNF(node):
             else:
                 node.item = "|"
 
-            if node.left.item == "-":
-                node.left = node.left.left # quitamos la negación ¬(¬a) = a
-            else: # añadir ¬
-                aux = Node("-")
-                aux.left = node.left
-                node.left = aux
+            # Negar hijo izquierdo
+            aux = Node("-")
+            aux.left = node.left
+            node.left = aux
+      
+            # Negar hijo derecho
+            aux = Node("-")
+            aux.left = node.right
+            node.right = aux
 
-            if node.right.item == "-":
-                node.right = node.right.left # quitamos la negación ¬(¬a) = a
-            else:
-                aux = Node("-")
-                aux.left = node.right
-                node.right = aux
-
-        elif node.left.item == "-": # ¬(¬a) = a | ¿quitar los anteriores?
+        elif node.left.item == "-": # ¬(¬a) = a (las que se creen con DeMorgan se deshacen aquí)
             node = node.left.left 
 
     if node.left is not None:
@@ -236,9 +232,11 @@ def main():
     print(preorden(tree1))
     #print(preorden(tree2))
 
-    if not isNNF(tree1):
+    i = 0
+    while not isNNF(tree1):
         print("\ntoNNF:\n")
-
+        i = i + 1
+        print(i)
         tree1 = toNNF(tree1)
         #tree2 = deMorgan(tree2)
 
