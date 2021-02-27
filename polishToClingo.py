@@ -53,8 +53,6 @@ def equivalence(node):
 
     return node
 
-
-
 def implication(node):
     # replace a -> b by ¬a \/ b 
     if node.item == ">":
@@ -68,32 +66,47 @@ def implication(node):
         implication(node.right)
     return node
 
-def deMorgan(node):
-    if node.item == "-" and (node.left.item == "|" or node.left.item == "&"): # si no es - ya no busca el hijo izquierdo 
-        node = node.left
-        if node.item == "|":
-            node.item = "&"
-        else:
-            node.item = "|"
+def isNNF(node):
+    if node.item == "-" and (node.left.item == "|" or node.left.item == "&" or node.left.item == "-"):
+        return False
+    aux = True
+    if node.left is not None:
+        aux = aux and isNNF(node.left) # no importa el orden
+    if node.right is not None:
+        aux = aux and isNNF(node.right)
+    return aux
 
-        if node.left.item == "-":
-            node.left = node.left.left # quitamos la negación ¬(¬a) = a
-        else: # añadir ¬
-            aux = Node("-")
-            aux.left = node.left
-            node.left = aux
+def toNNF(node):
+    if node.item == "-": # and (node.left.item == "|" or node.left.item == "&"): # si no es - ya no busca el hijo izquierdo 
+        if node.left.item == "|" or node.left.item == "&": # DeMorgan
+            node = node.left
 
-        if node.right.item == "-":
-            node.right = node.right.left # quitamos la negación ¬(¬a) = a
-        else:
-            aux = Node("-")
-            aux.left = node.right
-            node.right = aux
+            if node.item == "|":
+                node.item = "&"
+            else:
+                node.item = "|"
+
+            if node.left.item == "-":
+                node.left = node.left.left # quitamos la negación ¬(¬a) = a
+            else: # añadir ¬
+                aux = Node("-")
+                aux.left = node.left
+                node.left = aux
+
+            if node.right.item == "-":
+                node.right = node.right.left # quitamos la negación ¬(¬a) = a
+            else:
+                aux = Node("-")
+                aux.left = node.right
+                node.right = aux
+
+        elif node.left.item == "-": # ¬(¬a) = a | ¿quitar los anteriores?
+            node = node.left.left 
 
     if node.left is not None:
-        node.left = deMorgan(node.left) # no importa el orden
+        node.left = toNNF(node.left) # no importa el orden
     if node.right is not None:
-        node.right = deMorgan(node.right)
+        node.right = toNNF(node.right)
 
     return node
 
@@ -223,10 +236,11 @@ def main():
     print(preorden(tree1))
     #print(preorden(tree2))
 
-    print("\nDeMorgan:\n")
+    if not isNNF(tree1):
+        print("\ntoNNF:\n")
 
-    tree1 = deMorgan(tree1)
-    #tree2 = deMorgan(tree2)
+        tree1 = toNNF(tree1)
+        #tree2 = deMorgan(tree2)
 
     print(preorden(tree1))
     #print(preorden(tree2))
