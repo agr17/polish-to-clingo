@@ -139,11 +139,6 @@ def toCNF(node): # ¿Con esta llega? Solo hace distributiva
             aux_right.left = node.left
             aux_right.right = node.right.right
 
-        '''elif node.left.item != ("|" or "-") and node.right.item != ("|" or "-"):
-            node.item = [node.left.item,node.right.item]
-            node.left = None
-            node.right = None'''
-
         if aux_left is not None: # ¿Cambiar por un else + break? Break solo para loops...
             node.item = "&"
             node.left = aux_left
@@ -183,8 +178,8 @@ def asociative(node):
 
 def toClingo(tree):
     l = preorden(tree)
-
-    print(l)
+    words = set()
+    result = ""
 
     for x in l:
         if x != "&":
@@ -192,9 +187,14 @@ def toClingo(tree):
             for y in x:
                 if y.startswith("-"):
                     aux = aux + y[1:] + ", "
+                    words.add(y[1:])
                 else:
                     aux = aux + "not " + y + ", "
-            print(aux[:len(aux)-2] + ".") # quitamos la última ,
+                    words.add(y)
+            
+            result = result + aux[:len(aux)-2] + ".\n" # quitamos la última ,
+
+    return (words,result + "\n")
 
             
 
@@ -256,8 +256,6 @@ def reductionToCNF(expresion):
     while not isCNF(tree):
         tree = toCNF(tree)
 
-    print(preorden(tree))
-
     tree = asociative(tree)
 
     return tree
@@ -265,21 +263,37 @@ def reductionToCNF(expresion):
 
 def main():
 
-    print("\nBase expressions:\n")
+    filaname = "polish.txt"
 
-    #expresion = "| p & q r ."
-    #expresion = "> | rain - weekend - happy ."
-    expresion = "= weekend - workday ."
-    print(expresion)
+    f = open(filaname, "r")
+    words = set()
+    ins = ""
 
-    print("\nCNF:\n")
+    # inicia bucle infinito para leer línea a línea
+    while True: 
+        # lee línea
+        linea = f.readline()
+        if not linea: 
+            break  # Si no hay más se rompe bucle
 
-    tree = reductionToCNF(expresion)
+        tree = reductionToCNF(linea)
+        words_aux, result = toClingo(tree)
 
-    print(preorden(tree))
+        words = words | words_aux
+        ins = ins + "% " + linea +result
 
-    print("\nTo Clingo\n")
+    header = "{"
+    for x in words:
+        header = header + x + ";"
+    header = header[:len(header)-1] + "}.\n"
+        
+    f.close()  # Cierra archivo
 
-    toClingo(tree)
+    filaname = filaname.split(".")
+
+    f = open(filaname[0] + ".lp" , "x")
+    f.write(header)
+    f.write(ins)
+    f.close()
 
 main()
