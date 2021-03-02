@@ -31,18 +31,6 @@ def firstStep(node): # FALTA XOR
         # Conjunción de negaciones en la rama derecha
         aux_right = Node("&")
 
-        '''if node.left.item == "-":
-            aux_right.left = node.left.left
-        else:
-            aux_right.left = Node("-")
-            aux_right.left.left = node.left
-        
-        if node.right.item == "-":
-            aux_right.right = node.right.left
-        else:
-            aux_right.right = Node("-")
-            aux_right.right.left = node.left'''
-
         aux_right.left = Node("-")
         aux_right.left.left = node.left
 
@@ -58,6 +46,30 @@ def firstStep(node): # FALTA XOR
         aux = Node("-") # nodo auxiliar para añadir la negación
         aux.left = node.left
         node.left = aux
+    
+    # replace a xor b by (a /\ ¬b) \/ (¬a /\ b)  
+    elif node.item == "%":
+        node.item = "|"
+
+        # Conjunción en la rama izquierda
+        aux_left = Node("&")
+        aux_left.left = node.left # a
+        aux_left.right = Node("-")
+        aux_left.right.left = node.right # ¬b
+
+        # Conjunción de la rama derecha
+        aux_right = Node("&")
+        aux_right.left = Node("-")
+        aux_right.left.left = node.left
+        aux_right.right = node.right
+
+        node.left = aux_left
+        node.right = aux_right
+
+    elif node.item == "1":
+        node.item = "#true"
+    elif node.item == "0":
+        node.item = "#false" 
 
     if node.left is not None:
         firstStep(node.left) # no importa el orden
@@ -146,13 +158,7 @@ def toClingo(l):
         if x != "&":
             aux = ":- "
             for y in x:
-                if y == "0":
-                    aux = aux + "not #false, "
-                    words.add("#false")
-                elif y == "-0":
-                    aux = aux + "#false, "
-                    words.add("#false")
-                elif y.startswith("-"):
+                if y.startswith("-"):
                     aux = aux + y[1:] + ", "
                     words.add(y[1:])
                 else:
@@ -205,29 +211,12 @@ def reductionToCNF(expresion):
     word_splited = expresion.split()
     tree = to_tree(word_splited[:len(word_splited)-1]) # quitamos el punto y construimos arbol
 
-    print("Expresión")
-    print(preorden(tree))
-
     tree = firstStep(tree)
 
-    print("First step")
-    print(preorden(tree))
-
     while not isNNF(tree):
-        print("Iteraccion")
-        print(preorden(tree))
         tree = toNNF(tree)
-        
-        print(preorden(tree))
-        print("FIN Iteraccion")
-
-    print("AHORA EN NNF")
-    print(preorden(tree))
 
     l = cnf(tree)
-
-    print("lsita de listas")
-    print(l)
 
     return l
     
@@ -266,8 +255,6 @@ def main():
 
     filaname = filaname.split(".")
 
-    from os import remove # borrar
-    remove(filaname[0] + ".lp")
     f = open(filaname[0] + ".lp" , "x")
     f.write(header)
     f.write(ins)
