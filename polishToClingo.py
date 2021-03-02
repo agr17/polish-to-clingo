@@ -31,7 +31,7 @@ def firstStep(node): # FALTA XOR
         # Conjunción de negaciones en la rama derecha
         aux_right = Node("&")
 
-        if node.left.item == "-":
+        '''if node.left.item == "-":
             aux_right.left = node.left.left
         else:
             aux_right.left = Node("-")
@@ -41,7 +41,13 @@ def firstStep(node): # FALTA XOR
             aux_right.right = node.right.left
         else:
             aux_right.right = Node("-")
-            aux_right.right.left = node.left
+            aux_right.right.left = node.left'''
+
+        aux_right.left = Node("-")
+        aux_right.left.left = node.left
+
+        aux_right.right = Node("-")
+        aux_right.right.left = node.right
 
         node.left = aux_left
         node.right = aux_right
@@ -70,24 +76,26 @@ def isNNF(node):
     return aux
 
 def toNNF(node):
+    
     if node.item == "-": 
         if node.left.item == "|" or node.left.item == "&": # DeMorgan
-            node = node.left
+            #node = node.left
 
-            if node.item == "|":
+            if node.left.item == "|":
                 node.item = "&"
             else:
                 node.item = "|"
 
             # Negar hijo izquierdo
-            aux = Node("-")
-            aux.left = node.left
-            node.left = aux
-      
+            aux_left = Node("-")
+            aux_left.left = node.left.left
+
             # Negar hijo derecho
-            aux = Node("-")
-            aux.left = node.right
-            node.right = aux
+            aux_right = Node("-")
+            aux_right.left = node.left.right
+            
+            node.left = aux_left
+            node.right = aux_right
 
         elif node.left.item == "-": # ¬(¬a) = a (las que se creen con DeMorgan se deshacen aquí)
             node = node.left.left 
@@ -104,7 +112,7 @@ def cnf(node):
         aux_left = cnf(node.left)
         aux_right = cnf(node.right)
 
-        aux_left.extend(aux_right)
+        aux_left.extend(aux_right) # se pegan las listas
 
         return aux_left
 
@@ -197,21 +205,28 @@ def reductionToCNF(expresion):
     word_splited = expresion.split()
     tree = to_tree(word_splited[:len(word_splited)-1]) # quitamos el punto y construimos arbol
 
-    print()
+    print("Expresión")
     print(preorden(tree))
 
     tree = firstStep(tree)
 
+    print("First step")
     print(preorden(tree))
 
     while not isNNF(tree):
+        print("Iteraccion")
+        print(preorden(tree))
         tree = toNNF(tree)
+        
+        print(preorden(tree))
+        print("FIN Iteraccion")
 
     print("AHORA EN NNF")
     print(preorden(tree))
 
     l = cnf(tree)
 
+    print("lsita de listas")
     print(l)
 
     return l
