@@ -99,87 +99,38 @@ def toNNF(node):
 
     return node
 
-def isCNF(node): # se da por hecho que se han seguido todos los pasos previos
-    if node.item == "|" and ( node.left.item == "&" or node.right.item == "&" ):
-        return False
+def cnf(node):
+    if node.item == "&":    
+        aux_left = cnf(node.left)
+        aux_right = cnf(node.right)
 
-    if node.item == "-": # está en NNF, la negación solo puede ir con atomos
-        node.item = "-" + node.left.item # por tanto, se juntan en un mismo nodo
-        node.left = None
+        aux_left.extend(aux_right)
 
-    aux = True
+        return aux_left
 
-    if node.left is not None:
-        aux = aux and isCNF(node.left) # no importa el orden
-    if node.right is not None:
-        aux = aux and isCNF(node.right)
-    return aux
-    
-
-def toCNF(node): # ¿Con esta llega? Solo hace distributiva
-    aux_left = None
-    aux_right = None
-    
-    if node.item == "|": # Se puede reducir, aux = node.right/left según donde esté &!
-        if node.left.item == "&":
-
-            aux_left = Node("|")
-            aux_left.left = node.right
-            aux_left.right = node.left.left
-
-            aux_right = Node("|")
-            aux_right.left = node.right
-            aux_right.right = node.left.right
-
-        elif node.right.item == "&":
-
-            aux_left = Node("|")
-            aux_left.left = node.left
-            aux_left.right = node.right.left
-
-            aux_right = Node("|")
-            aux_right.left = node.left
-            aux_right.right = node.right.right
-
-        if aux_left is not None: # ¿Cambiar por un else + break? Break solo para loops...
-            node.item = "&"
-            node.left = aux_left
-            node.right = aux_right
-
-    if node.left is not None:
-        node.left = toCNF(node.left)  
-    if node.right is not None:
-        node.right = toCNF(node.right)
-
-    return node
-
-def asociative(node):
-    if node.item == "&":
-        node.left = asociative(node.left)
-        node.right = asociative(node.right)
     elif node.item == "|":
-        if node.left.item != ("|" or "-") and node.right.item != ("|" or "-"):
-            node.item = [node.left.item, node.right.item] 
-            node.left = None
-            node.right = None
-        elif node.left.item != ("|" or "-"):
-            node = [node.left.item,asociative(node.right)]
-            node.left = None
-            node.right = None
-        elif node.right.item != ("|" or "-"):
-            node = [asociative(node.left),node.right.item]
-            node.left = None
-            node.right = None
-        else:
-            node = [asociative(node.left),asociative(node.right)]
-            node.left = None
-            node.right = None
-    else:
-        node.item = [node.item]
-    return node
+        aux_left = cnf(node.left)
+        aux_right = cnf(node.right)
 
-def toClingo(tree):
-    l = preorden(tree)
+        l = []
+
+        for i in aux_left:
+            for j in aux_right:
+                aux = []
+
+                aux.extend(i)
+                aux.extend(j)
+
+                l.append(aux)
+
+        return l 
+
+    elif node.item == "-":
+        return [["-" + node.left.item]]
+    else:
+        return [[node.item]]
+
+def toClingo(l):
     words = set()
     result = ""
 
@@ -187,7 +138,13 @@ def toClingo(tree):
         if x != "&":
             aux = ":- "
             for y in x:
-                if y.startswith("-"):
+                if y == "0":
+                    aux = aux + "not #false, "
+                    words.add("#false")
+                elif y == "-0":
+                    aux = aux + "#false, "
+                    words.add("#false")
+                elif y.startswith("-"):
                     aux = aux + y[1:] + ", "
                     words.add(y[1:])
                 else:
@@ -196,9 +153,7 @@ def toClingo(tree):
             
             result = result + aux[:len(aux)-2] + ".\n" # quitamos la última ,
 
-    return (words,result + "\n")
-
-            
+    return (words,result + "\n")            
 
 PAIR = {"&","|",">","=","%"} # Constante, estas operaciones son BINARIAS
 
@@ -238,29 +193,28 @@ def to_tree(words):
         node.left = to_tree(rest)
         return node            
 
-def process_polish(word):
-    if not word.endswith("."):
-        print("Entrada invalida, no termina con .")
-    else:
-
-        word_splited = word.split()
-        return to_tree(word_splited[:len(word_splited)-1]) # Quitar el .
-
 def reductionToCNF(expresion):
     word_splited = expresion.split()
-    tree = to_tree(word_splited[:len(word_splited)-1])
+    tree = to_tree(word_splited[:len(word_splited)-1]) # quitamos el punto y construimos arbol
+
+    print()
+    print(preorden(tree))
 
     tree = firstStep(tree)
+
+    print(preorden(tree))
 
     while not isNNF(tree):
         tree = toNNF(tree)
 
-    while not isCNF(tree):
-        tree = toCNF(tree)
+    print("AHORA EN NNF")
+    print(preorden(tree))
 
-    tree = asociative(tree)
+    l = cnf(tree)
 
-    return tree
+    print(l)
+
+    return l
     
 
 def main():
@@ -282,11 +236,11 @@ def main():
         if not linea: 
             break  # Si no hay más se rompe bucle
 
-        tree = reductionToCNF(linea)
-        words_aux, result = toClingo(tree)
+        l = reductionToCNF(linea) # obtenemos la lista de listas
+        words_aux, result = toClingo(l)
 
         words = words | words_aux
-        ins = ins + "% " + linea +result
+        ins = ins + "% " + linea + "\n" + result
 
     header = "{"
     for x in words:
@@ -297,6 +251,8 @@ def main():
 
     filaname = filaname.split(".")
 
+    from os import remove # borrar
+    remove(filaname[0] + ".lp")
     f = open(filaname[0] + ".lp" , "x")
     f.write(header)
     f.write(ins)
