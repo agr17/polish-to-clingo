@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import sys
 
 class Node:
@@ -18,7 +16,7 @@ def preorden(node):
         nodeList = nodeList + preorden(node.right)
     return nodeList
 
-def firstStep(node): # FALTA XOR
+def firstStep(node): 
     # replace a <-> b by (a /\ b) \/ (¬a /\ ¬b) 
     if node.item == "=": # damos por hecho que left y right not null
         node.item = "|"
@@ -255,7 +253,7 @@ def main():
 
     filaname = filaname.split(".")
 
-    f = open(filaname[0] + ".lp" , "x")
+    f = open(filaname[0] + ".lp" , "w")
     f.write(header)
     f.write(ins)
     f.close()
