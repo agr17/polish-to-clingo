@@ -1,5 +1,7 @@
 import sys
 
+PAIR = {"&","|",">","=","%"} # Constante, estas operaciones son BINARIAS
+
 class Node:
 
     def __init__(self, item):
@@ -166,8 +168,6 @@ def toClingo(l):
             result = result + aux[:len(aux)-2] + ".\n" # quitamos la última ,
 
     return (words,result + "\n")            
-
-PAIR = {"&","|",">","=","%"} # Constante, estas operaciones son BINARIAS
 
 def to_tree(words):
 
