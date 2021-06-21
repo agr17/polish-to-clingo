@@ -1,6 +1,6 @@
 # polishToClingo
 
-Programa en Python para pasar expresiones de lógica en [notación polaca](https://en.wikipedia.org/wiki/Polish_notation) a un fichero para ser procesado por la herramienta [Clingo](https://potassco.org/clingo/).
+Programa en Python para pasar expresiones lógicas en [notación polaca](https://en.wikipedia.org/wiki/Polish_notation) a un fichero para ser procesado por la herramienta [Clingo](https://potassco.org/clingo/).
 
 Enunciado de la práctica: https://www.dc.fi.udc.es/~cabalar/kr/current/ex1.html
 
