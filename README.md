@@ -1,8 +1,8 @@
-# polishToClingo
+# Polish-to-Clingo
 
-Programa en Python para pasar expresiones lógicas en [notación polaca](https://en.wikipedia.org/wiki/Polish_notation) a un fichero para ser procesado por la herramienta [Clingo](https://potassco.org/clingo/).
+Programa en Python para pasar expresiones lógicas en [notación polaca](https://en.wikipedia.org/wiki/Polish_notation) a un fichero para ser procesado por la herramienta [Clingo](https://potassco.org/clingo/). Para ello, se realizará una reducción a [Forma Normal Conjuntiva](https://es.wikipedia.org/wiki/Forma_normal_conjuntiva), como se explica en el enunciado.
 
-Enunciado de la práctica: https://www.dc.fi.udc.es/~cabalar/kr/current/ex1.html
+[Enunciado de la práctica](https://www.dc.fi.udc.es/~cabalar/kr/2021/ex1.html)
 
 ## Uso 
 
